@@ -42,6 +42,18 @@ test("publishes cwd and the current session name", async () => {
   ]);
 });
 
+test("refreshes when a prompt is entered", async () => {
+  const handlers = createExtension();
+  const { calls, context } = createContext("Prompt session");
+
+  await handlers.get("input")({ type: "input", text: "hello", source: "interactive" }, context);
+
+  assert.deepEqual(calls, [
+    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: Prompt session"],
+    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: Prompt session"], { placement: "belowEditor" }],
+  ]);
+});
+
 test("uses a visible fallback when the session has no name", async () => {
   const handlers = createExtension();
   const { calls, context } = createContext(undefined);
