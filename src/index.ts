@@ -5,7 +5,9 @@ const UNNAMED_SESSION = "(unnamed)";
 
 function updateStatus(ctx: ExtensionContext): void {
   const sessionName = ctx.sessionManager.getSessionName() ?? UNNAMED_SESSION;
-  ctx.ui.setStatus(STATUS_KEY, `cwd: ${ctx.cwd} | session: ${sessionName}`);
+  const status = `cwd: ${ctx.cwd} | session: ${sessionName}`;
+  ctx.ui.setStatus(STATUS_KEY, status);
+  ctx.ui.setWidget(STATUS_KEY, [status], { placement: "belowEditor" });
 }
 
 export default function primeStatus(pi: ExtensionAPI): void {
@@ -18,5 +20,6 @@ export default function primeStatus(pi: ExtensionAPI): void {
   pi.on("turn_end", refresh);
   pi.on("session_shutdown", async (_event, ctx) => {
     ctx.ui.setStatus(STATUS_KEY, undefined);
+    ctx.ui.setWidget(STATUS_KEY, undefined);
   });
 }

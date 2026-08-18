@@ -3,8 +3,10 @@
 A small Prime Agent package that adds the current working directory and session
 name to the status line.
 
-The extension uses `ctx.ui.setStatus()`, so it works in interactive and daemon
-sessions without a custom TUI component.
+The extension uses `ctx.ui.setStatus()` and mirrors the same line with
+`ctx.ui.setWidget()` below the editor. The widget keeps the information visible in
+Prime's current TUI, whose built-in footer is empty, while remaining compatible
+with interactive and daemon sessions.
 
 ## Install
 
@@ -24,6 +26,7 @@ current project. Restart Prime Agent, or run `/reload`, after installing.
 cwd: /workspaces/prime-board | session: Release review
 ```
 
+The line is published as a persistent status and as a widget below the editor.
 If the session has no name, the extension displays `(unnamed)`.
 
 ## Development

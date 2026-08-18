@@ -23,7 +23,8 @@ function createContext(sessionName) {
         getSessionName: () => sessionName,
       },
       ui: {
-        setStatus: (...args) => calls.push(args),
+        setStatus: (...args) => calls.push(["setStatus", ...args]),
+        setWidget: (...args) => calls.push(["setWidget", ...args]),
       },
     },
   };
@@ -35,7 +36,10 @@ test("publishes cwd and the current session name", async () => {
 
   await handlers.get("session_start")({ type: "session_start", reason: "startup" }, context);
 
-  assert.deepEqual(calls, [["prime-status", "cwd: /workspaces/prime-board | session: Release review"]]);
+  assert.deepEqual(calls, [
+    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: Release review"],
+    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: Release review"], { placement: "belowEditor" }],
+  ]);
 });
 
 test("uses a visible fallback when the session has no name", async () => {
@@ -44,7 +48,10 @@ test("uses a visible fallback when the session has no name", async () => {
 
   await handlers.get("turn_start")({ type: "turn_start", turnIndex: 0, timestamp: 0 }, context);
 
-  assert.deepEqual(calls, [["prime-status", "cwd: /workspaces/prime-board | session: (unnamed)"]]);
+  assert.deepEqual(calls, [
+    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: (unnamed)"],
+    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: (unnamed)"], { placement: "belowEditor" }],
+  ]);
 });
 
 test("refreshes on turns and clears on shutdown", async () => {
@@ -55,7 +62,9 @@ test("refreshes on turns and clears on shutdown", async () => {
   await handlers.get("session_shutdown")({ type: "session_shutdown" }, context);
 
   assert.deepEqual(calls, [
-    ["prime-status", "cwd: /workspaces/prime-board | session: Named session"],
-    ["prime-status", undefined],
+    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: Named session"],
+    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: Named session"], { placement: "belowEditor" }],
+    ["setStatus", "prime-status", undefined],
+    ["setWidget", "prime-status", undefined],
   ]);
 });
