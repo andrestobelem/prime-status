@@ -28,7 +28,7 @@ cwd: /workspaces/prime-board | session: Release review
 ```
 
 The line is published as a persistent status and as a widget below the editor.
-The labels use the muted theme color, values use the accent color, and an unnamed
+The icons and values use the accent theme color, labels use muted, and an unnamed
 session uses the warning color. The visual symbols use Nerd Font glyphs (``,
 ``) and the Powerline-thin separator (``). With FiraCode Nerd Font Mono, these
 glyphs are included in the terminal font; Powerline is not a separate font.

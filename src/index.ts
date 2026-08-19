@@ -19,9 +19,9 @@ function updateStatus(ctx: ExtensionContext): void {
     }
   };
   const status =
-    `${fg("muted", `${CWD_ICON} cwd:`)} ${fg("accent", ctx.cwd)}` +
+    `${fg("accent", CWD_ICON)} ${fg("muted", "cwd:")} ${fg("accent", ctx.cwd)}` +
     fg("dim", SEGMENT_SEPARATOR) +
-    `${fg("muted", `${SESSION_ICON} session:`)} ` +
+    `${fg("accent", SESSION_ICON)} ${fg("muted", "session:")} ` +
     fg(sessionColor, sessionName);
   ctx.ui.setStatus(STATUS_KEY, status);
   ctx.ui.setWidget(STATUS_KEY, [status], { placement: "belowEditor" });

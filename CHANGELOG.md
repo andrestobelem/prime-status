@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 - 2026-08-19
+
+### Fixed
+
+- Apply theme accent colors to status icons while keeping labels muted.
+
+
 ## 0.1.1 - 2026-08-19
 
 ### Added

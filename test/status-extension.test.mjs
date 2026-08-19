@@ -75,8 +75,8 @@ test("uses theme colors for labels, values, and an unnamed session", async () =>
   await handlers.get("session_start")({ type: "session_start", reason: "startup" }, context);
 
   const status =
-    "<muted> cwd:</muted> <accent>/workspaces/prime-board</accent><dim>  </dim>" +
-    "<muted> session:</muted> <warning>(unnamed)</warning>";
+    "<accent></accent> <muted>cwd:</muted> <accent>/workspaces/prime-board</accent><dim>  </dim>" +
+    "<accent></accent> <muted>session:</muted> <warning>(unnamed)</warning>";
   assert.deepEqual(calls, [
     ["setStatus", "prime-status", status],
     ["setWidget", "prime-status", [status], { placement: "belowEditor" }],
@@ -91,8 +91,8 @@ test("uses accent color for a named session", async () => {
   await handlers.get("session_start")({ type: "session_start", reason: "startup" }, context);
 
   const status =
-    "<muted> cwd:</muted> <accent>/workspaces/prime-board</accent><dim>  </dim>" +
-    "<muted> session:</muted> <accent>Release review</accent>";
+    "<accent></accent> <muted>cwd:</muted> <accent>/workspaces/prime-board</accent><dim>  </dim>" +
+    "<accent></accent> <muted>session:</muted> <accent>Release review</accent>";
   assert.deepEqual(calls, [
     ["setStatus", "prime-status", status],
     ["setWidget", "prime-status", [status], { placement: "belowEditor" }],
