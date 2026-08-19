@@ -22,6 +22,7 @@ export default function primeStatus(pi: ExtensionAPI): void {
   };
 
   pi.on("session_start", refresh);
+  pi.on("session_info_changed", refresh);
   pi.on("input", refresh);
   pi.on("turn_start", refresh);
   pi.on("turn_end", refresh);

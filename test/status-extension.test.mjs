@@ -15,12 +15,16 @@ function createExtension() {
 
 function createContext(sessionName) {
   const calls = [];
+  let currentSessionName = sessionName;
   return {
     calls,
+    setSessionName(name) {
+      currentSessionName = name;
+    },
     context: {
       cwd: "/workspaces/prime-board",
       sessionManager: {
-        getSessionName: () => sessionName,
+        getSessionName: () => currentSessionName,
       },
       ui: {
         theme: {
@@ -74,6 +78,29 @@ test("uses accent color for a named session", async () => {
   assert.deepEqual(calls, [
     ["setStatus", "prime-status", status],
     ["setWidget", "prime-status", [status], { placement: "belowEditor" }],
+  ]);
+});
+
+test("refreshes when the session name changes or is cleared", async () => {
+  const handlers = createExtension();
+  const { calls, context, setSessionName } = createContext("Initial name");
+
+  setSessionName("Renamed session");
+  await handlers.get("session_info_changed")({
+    type: "session_info_changed",
+    name: "Renamed session",
+  }, context);
+  setSessionName(undefined);
+  await handlers.get("session_info_changed")({
+    type: "session_info_changed",
+    name: undefined,
+  }, context);
+
+  assert.deepEqual(calls, [
+    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: Renamed session"],
+    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: Renamed session"], { placement: "belowEditor" }],
+    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: (unnamed)"],
+    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: (unnamed)"], { placement: "belowEditor" }],
   ]);
 });
 

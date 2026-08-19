@@ -6,7 +6,8 @@ name to the status line.
 The extension uses `ctx.ui.setStatus()` and mirrors the same line with
 `ctx.ui.setWidget()` below the editor. The widget keeps the information visible in
 Prime's current TUI, whose built-in footer is empty, while remaining compatible
-with interactive and daemon sessions.
+with interactive and daemon sessions. It refreshes when the session starts, when
+turns or prompts change, and when the session name is renamed or cleared.
 
 ## Install
 
