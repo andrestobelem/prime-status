@@ -1,8 +1,8 @@
 {
   "name": "prime-status",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Prime Agent status line extension for the current working directory and session name",
-  "author": "Andr\u00e9s Tobelem <andres.tobelem@gmail.com>",
+  "author": "Andrés Tobelem <andres.tobelem@gmail.com>",
   "license": "MIT",
   "keywords": [
     "prime-agent-package",

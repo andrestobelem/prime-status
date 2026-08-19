@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 - 2026-08-19
+
+### Added
+
+- Added Nerd Font symbols and a Powerline-thin separator to the status display.
+- Added a fallback for status updates before the theme is initialized.
+
+
 ## 0.1.0 - 2026-08-19
 
 ### Fixed

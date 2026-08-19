@@ -44,8 +44,8 @@ test("publishes cwd and the current session name", async () => {
   await handlers.get("session_start")({ type: "session_start", reason: "startup" }, context);
 
   assert.deepEqual(calls, [
-    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: Release review"],
-    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: Release review"], { placement: "belowEditor" }],
+    ["setStatus", "prime-status", " cwd: /workspaces/prime-board   session: Release review"],
+    ["setWidget", "prime-status", [" cwd: /workspaces/prime-board   session: Release review"], { placement: "belowEditor" }],
   ]);
 });
 
@@ -60,7 +60,7 @@ test("publishes an unstyled fallback before the theme is initialized", async () 
 
   await handlers.get("input")({ type: "input", text: "hello", source: "interactive" }, context);
 
-  const status = "cwd: /workspaces/prime-board | session: Early session";
+  const status = " cwd: /workspaces/prime-board   session: Early session";
   assert.deepEqual(calls, [
     ["setStatus", "prime-status", status],
     ["setWidget", "prime-status", [status], { placement: "belowEditor" }],
@@ -75,8 +75,8 @@ test("uses theme colors for labels, values, and an unnamed session", async () =>
   await handlers.get("session_start")({ type: "session_start", reason: "startup" }, context);
 
   const status =
-    "<muted>cwd:</muted> <accent>/workspaces/prime-board</accent><dim> | </dim>" +
-    "<muted>session:</muted> <warning>(unnamed)</warning>";
+    "<muted> cwd:</muted> <accent>/workspaces/prime-board</accent><dim>  </dim>" +
+    "<muted> session:</muted> <warning>(unnamed)</warning>";
   assert.deepEqual(calls, [
     ["setStatus", "prime-status", status],
     ["setWidget", "prime-status", [status], { placement: "belowEditor" }],
@@ -91,8 +91,8 @@ test("uses accent color for a named session", async () => {
   await handlers.get("session_start")({ type: "session_start", reason: "startup" }, context);
 
   const status =
-    "<muted>cwd:</muted> <accent>/workspaces/prime-board</accent><dim> | </dim>" +
-    "<muted>session:</muted> <accent>Release review</accent>";
+    "<muted> cwd:</muted> <accent>/workspaces/prime-board</accent><dim>  </dim>" +
+    "<muted> session:</muted> <accent>Release review</accent>";
   assert.deepEqual(calls, [
     ["setStatus", "prime-status", status],
     ["setWidget", "prime-status", [status], { placement: "belowEditor" }],
@@ -115,10 +115,10 @@ test("refreshes when the session name changes or is cleared", async () => {
   }, context);
 
   assert.deepEqual(calls, [
-    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: Renamed session"],
-    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: Renamed session"], { placement: "belowEditor" }],
-    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: (unnamed)"],
-    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: (unnamed)"], { placement: "belowEditor" }],
+    ["setStatus", "prime-status", " cwd: /workspaces/prime-board   session: Renamed session"],
+    ["setWidget", "prime-status", [" cwd: /workspaces/prime-board   session: Renamed session"], { placement: "belowEditor" }],
+    ["setStatus", "prime-status", " cwd: /workspaces/prime-board   session: (unnamed)"],
+    ["setWidget", "prime-status", [" cwd: /workspaces/prime-board   session: (unnamed)"], { placement: "belowEditor" }],
   ]);
 });
 
@@ -129,8 +129,8 @@ test("refreshes when a prompt is entered", async () => {
   await handlers.get("input")({ type: "input", text: "hello", source: "interactive" }, context);
 
   assert.deepEqual(calls, [
-    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: Prompt session"],
-    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: Prompt session"], { placement: "belowEditor" }],
+    ["setStatus", "prime-status", " cwd: /workspaces/prime-board   session: Prompt session"],
+    ["setWidget", "prime-status", [" cwd: /workspaces/prime-board   session: Prompt session"], { placement: "belowEditor" }],
   ]);
 });
 
@@ -141,8 +141,8 @@ test("uses a visible fallback when the session has no name", async () => {
   await handlers.get("turn_start")({ type: "turn_start", turnIndex: 0, timestamp: 0 }, context);
 
   assert.deepEqual(calls, [
-    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: (unnamed)"],
-    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: (unnamed)"], { placement: "belowEditor" }],
+    ["setStatus", "prime-status", " cwd: /workspaces/prime-board   session: (unnamed)"],
+    ["setWidget", "prime-status", [" cwd: /workspaces/prime-board   session: (unnamed)"], { placement: "belowEditor" }],
   ]);
 });
 
@@ -154,8 +154,8 @@ test("refreshes on turns and clears on shutdown", async () => {
   await handlers.get("session_shutdown")({ type: "session_shutdown" }, context);
 
   assert.deepEqual(calls, [
-    ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: Named session"],
-    ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: Named session"], { placement: "belowEditor" }],
+    ["setStatus", "prime-status", " cwd: /workspaces/prime-board   session: Named session"],
+    ["setWidget", "prime-status", [" cwd: /workspaces/prime-board   session: Named session"], { placement: "belowEditor" }],
     ["setStatus", "prime-status", undefined],
     ["setWidget", "prime-status", undefined],
   ]);

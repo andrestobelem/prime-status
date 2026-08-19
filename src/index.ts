@@ -2,6 +2,9 @@ import type { ExtensionAPI, ExtensionContext, ThemeColor } from "@earendil-works
 
 const STATUS_KEY = "prime-status";
 const UNNAMED_SESSION = "(unnamed)";
+const CWD_ICON = "";
+const SESSION_ICON = "";
+const SEGMENT_SEPARATOR = "  ";
 
 function updateStatus(ctx: ExtensionContext): void {
   const namedSession = ctx.sessionManager.getSessionName();
@@ -16,8 +19,9 @@ function updateStatus(ctx: ExtensionContext): void {
     }
   };
   const status =
-    `${fg("muted", "cwd:")} ${fg("accent", ctx.cwd)}` +
-    `${fg("dim", " | ")}${fg("muted", "session:")} ` +
+    `${fg("muted", `${CWD_ICON} cwd:`)} ${fg("accent", ctx.cwd)}` +
+    fg("dim", SEGMENT_SEPARATOR) +
+    `${fg("muted", `${SESSION_ICON} session:`)} ` +
     fg(sessionColor, sessionName);
   ctx.ui.setStatus(STATUS_KEY, status);
   ctx.ui.setWidget(STATUS_KEY, [status], { placement: "belowEditor" });
