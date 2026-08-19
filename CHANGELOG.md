@@ -1,13 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.1.0 - 2026-08-19
 
 ### Fixed
 
 - Refresh the status line when a session is renamed or its name is cleared.
 - Added CI checks for typechecking, tests, and package contents.
-
-## 0.1.0 - 2026-08-18
 
 ### Added
 
