@@ -1,4 +1,4 @@
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-agent";
 
 const STATUS_KEY = "prime-status";
 const UNNAMED_SESSION = "(unnamed)";
@@ -7,11 +7,18 @@ function updateStatus(ctx: ExtensionContext): void {
   const namedSession = ctx.sessionManager.getSessionName();
   const sessionName = namedSession ?? UNNAMED_SESSION;
   const sessionColor = namedSession === undefined ? "warning" : "accent";
-  const theme = ctx.ui.theme;
+  const fg = (color: ThemeColor, text: string): string => {
+    try {
+      return ctx.ui.theme.fg(color, text);
+    } catch {
+      // El daemon puede emitir eventos antes de que la TUI inicialice el tema.
+      return text;
+    }
+  };
   const status =
-    `${theme.fg("muted", "cwd:")} ${theme.fg("accent", ctx.cwd)}` +
-    `${theme.fg("dim", " | ")}${theme.fg("muted", "session:")} ` +
-    theme.fg(sessionColor, sessionName);
+    `${fg("muted", "cwd:")} ${fg("accent", ctx.cwd)}` +
+    `${fg("dim", " | ")}${fg("muted", "session:")} ` +
+    fg(sessionColor, sessionName);
   ctx.ui.setStatus(STATUS_KEY, status);
   ctx.ui.setWidget(STATUS_KEY, [status], { placement: "belowEditor" });
 }

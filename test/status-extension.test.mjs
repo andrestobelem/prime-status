@@ -49,6 +49,24 @@ test("publishes cwd and the current session name", async () => {
   ]);
 });
 
+test("publishes an unstyled fallback before the theme is initialized", async () => {
+  const handlers = createExtension();
+  const { calls, context } = createContext("Early session");
+  Object.defineProperty(context.ui, "theme", {
+    get() {
+      throw new Error("Theme not initialized");
+    },
+  });
+
+  await handlers.get("input")({ type: "input", text: "hello", source: "interactive" }, context);
+
+  const status = "cwd: /workspaces/prime-board | session: Early session";
+  assert.deepEqual(calls, [
+    ["setStatus", "prime-status", status],
+    ["setWidget", "prime-status", [status], { placement: "belowEditor" }],
+  ]);
+});
+
 test("uses theme colors for labels, values, and an unnamed session", async () => {
   const handlers = createExtension();
   const { calls, context } = createContext(undefined);
