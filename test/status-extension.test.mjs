@@ -23,6 +23,9 @@ function createContext(sessionName) {
         getSessionName: () => sessionName,
       },
       ui: {
+        theme: {
+          fg: (_color, text) => text,
+        },
         setStatus: (...args) => calls.push(["setStatus", ...args]),
         setWidget: (...args) => calls.push(["setWidget", ...args]),
       },
@@ -39,6 +42,38 @@ test("publishes cwd and the current session name", async () => {
   assert.deepEqual(calls, [
     ["setStatus", "prime-status", "cwd: /workspaces/prime-board | session: Release review"],
     ["setWidget", "prime-status", ["cwd: /workspaces/prime-board | session: Release review"], { placement: "belowEditor" }],
+  ]);
+});
+
+test("uses theme colors for labels, values, and an unnamed session", async () => {
+  const handlers = createExtension();
+  const { calls, context } = createContext(undefined);
+  context.ui.theme.fg = (color, text) => `<${color}>${text}</${color}>`;
+
+  await handlers.get("session_start")({ type: "session_start", reason: "startup" }, context);
+
+  const status =
+    "<muted>cwd:</muted> <accent>/workspaces/prime-board</accent><dim> | </dim>" +
+    "<muted>session:</muted> <warning>(unnamed)</warning>";
+  assert.deepEqual(calls, [
+    ["setStatus", "prime-status", status],
+    ["setWidget", "prime-status", [status], { placement: "belowEditor" }],
+  ]);
+});
+
+test("uses accent color for a named session", async () => {
+  const handlers = createExtension();
+  const { calls, context } = createContext("Release review");
+  context.ui.theme.fg = (color, text) => `<${color}>${text}</${color}>`;
+
+  await handlers.get("session_start")({ type: "session_start", reason: "startup" }, context);
+
+  const status =
+    "<muted>cwd:</muted> <accent>/workspaces/prime-board</accent><dim> | </dim>" +
+    "<muted>session:</muted> <accent>Release review</accent>";
+  assert.deepEqual(calls, [
+    ["setStatus", "prime-status", status],
+    ["setWidget", "prime-status", [status], { placement: "belowEditor" }],
   ]);
 });
 

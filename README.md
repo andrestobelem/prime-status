@@ -27,7 +27,9 @@ cwd: /workspaces/prime-board | session: Release review
 ```
 
 The line is published as a persistent status and as a widget below the editor.
-If the session has no name, the extension displays `(unnamed)`.
+The labels use the muted theme color, values use the accent color, and an unnamed
+session uses the warning color. If the session has no name, the extension displays
+`(unnamed)`.
 
 ## Development
 

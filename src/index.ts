@@ -4,8 +4,14 @@ const STATUS_KEY = "prime-status";
 const UNNAMED_SESSION = "(unnamed)";
 
 function updateStatus(ctx: ExtensionContext): void {
-  const sessionName = ctx.sessionManager.getSessionName() ?? UNNAMED_SESSION;
-  const status = `cwd: ${ctx.cwd} | session: ${sessionName}`;
+  const namedSession = ctx.sessionManager.getSessionName();
+  const sessionName = namedSession ?? UNNAMED_SESSION;
+  const sessionColor = namedSession === undefined ? "warning" : "accent";
+  const theme = ctx.ui.theme;
+  const status =
+    `${theme.fg("muted", "cwd:")} ${theme.fg("accent", ctx.cwd)}` +
+    `${theme.fg("dim", " | ")}${theme.fg("muted", "session:")} ` +
+    theme.fg(sessionColor, sessionName);
   ctx.ui.setStatus(STATUS_KEY, status);
   ctx.ui.setWidget(STATUS_KEY, [status], { placement: "belowEditor" });
 }
