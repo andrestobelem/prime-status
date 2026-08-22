@@ -15,7 +15,7 @@ From a local tarball:
 
 ```sh
 npm pack
-prime-agent package install npm:prime-status@file:/absolute/path/prime-status-0.1.0.tgz
+prime-agent package install npm:prime-status@file:/absolute/path/prime-status-0.1.2.tgz
 ```
 
 Use `--local` with `prime-agent package install` to install it only for the
