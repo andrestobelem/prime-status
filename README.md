@@ -1,13 +1,13 @@
 # prime-status
 
 A small Prime Agent package that adds the current working directory and session
-name to the status line.
+name to the status display.
 
-The extension uses `ctx.ui.setStatus()` and mirrors the same line with
-`ctx.ui.setWidget()` below the editor. The widget keeps the information visible in
-Prime's current TUI, whose built-in footer is empty, while remaining compatible
-with interactive and daemon sessions. It refreshes when the session starts, when
-turns or prompts change, and when the session name is renamed or cleared.
+In the interactive TUI, the extension renders a compact, themed card below the
+editor. In RPC and daemon sessions, it publishes a plain protocol-friendly line
+through `ctx.ui.setStatus()` and `ctx.ui.setWidget()`. It refreshes when the
+session starts, when turns or prompts change, and when the session name is
+renamed or cleared.
 
 ## Install
 
@@ -24,15 +24,27 @@ current project. Restart Prime Agent, or run `/reload`, after installing.
 ## Display
 
 ```text
-cwd: /workspaces/prime-board | session: Release review
+╭─ cwd ───────────────────────────────────────────────────╮
+│  /workspaces/prime-board  •   session: Release review │
+│  worktree: prime-board                                 │
+╰─────────────────────────────────────────────────────────╯
 ```
 
-The line is published as a persistent status and as a widget below the editor.
-The icons and values use the accent theme color, labels use muted, and an unnamed
-session uses the warning color. The visual symbols use Nerd Font glyphs (``,
-``) and the Powerline-thin separator (``). With FiraCode Nerd Font Mono, these
-glyphs are included in the terminal font; Powerline is not a separate font.
-If the session has no name, the extension displays `(unnamed)`.
+The TUI card has a themed border, a `cwd` title, and responsive rows for the
+path, session, and Git worktree name. Long values are truncated to the available
+width. It follows the agents view palette: the border and title use `border`
+and `accent`, the cwd uses `mdLink`, a named session uses `customMessageLabel`,
+and a detected worktree uses `success`. Labels stay `muted`; unnamed sessions
+and missing worktrees use `warning` and `dim`. The card uses the terminal width when the host provides it and keeps
+an 80-column fallback in daemon sessions. In a local TUI, the card uses the
+custom footer so it is stacked below the built-in `agents` summary. Daemon-backed
+TUI clients do not expose custom footers, so they use the same compact card as a
+pre-rendered `belowEditor` widget; other headless clients receive the compact line
+instead.
+The visual symbols use Nerd Font glyphs (``, ``) and the Powerline-thin
+separator (``). With FiraCode Nerd Font Mono, these glyphs are included in the
+terminal font; Powerline is not a separate font. If the session has no name, the
+extension displays `(unnamed)`.
 
 ## Development
 

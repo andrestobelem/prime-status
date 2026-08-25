@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Replace the flat TUI cwd line with a responsive, themed card that also shows the session and Git worktree.
+- Stack the local TUI card below the built-in agents summary and keep a widget fallback for daemon and RPC clients.
+- Match the agents view palette and use the available terminal width with a compact daemon fallback.
+
+### Fixed
+
+- Sanitize terminal controls and bound dynamic cwd/session values before rendering them.
+- Render a pre-styled card for daemon-backed TUI clients that cannot receive component factories.
+
 ## 0.1.2 - 2026-08-19
 
 ### Fixed
