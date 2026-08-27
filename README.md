@@ -4,10 +4,10 @@ A small Prime Agent package that adds the current working directory and session
 name to the status display.
 
 In the interactive TUI, the extension renders a compact, themed card below the
-editor. In RPC and daemon sessions, it publishes a plain protocol-friendly line
-through `ctx.ui.setStatus()` and `ctx.ui.setWidget()`. It refreshes when the
-session starts, when turns or prompts change, and when the session name is
-renamed or cleared.
+editor with a widget. In RPC sessions, it sends the same card as pre-rendered
+widget lines because component factories are not supported there. It refreshes
+when the session starts, when turns or prompts change, and when the session name
+is renamed or cleared.
 
 ## Install
 
@@ -15,7 +15,7 @@ From a local tarball:
 
 ```sh
 npm pack
-prime-agent package install npm:prime-status@file:/absolute/path/prime-status-0.1.2.tgz
+prime-agent package install npm:prime-status@file:/absolute/path/prime-status-0.1.4.tgz
 ```
 
 Use `--local` with `prime-agent package install` to install it only for the
@@ -35,12 +35,11 @@ path, session, and Git worktree name. Long values are truncated to the available
 width. It follows the agents view palette: the border and title use `border`
 and `accent`, the cwd uses `mdLink`, a named session uses `customMessageLabel`,
 and a detected worktree uses `success`. Labels stay `muted`; unnamed sessions
-and missing worktrees use `warning` and `dim`. The card uses the terminal width when the host provides it and keeps
-an 80-column fallback in daemon sessions. In a local TUI, the card uses the
-custom footer so it is stacked below the built-in `agents` summary. Daemon-backed
-TUI clients do not expose custom footers, so they use the same compact card as a
-pre-rendered `belowEditor` widget; other headless clients receive the compact line
-instead.
+and missing worktrees use `warning` and `dim`. The card uses the terminal width
+when the host provides it and keeps an 80-column fallback in RPC sessions. In a
+local TUI, it uses a `belowEditor` widget and leaves the built-in footer intact.
+RPC clients receive the same card as pre-rendered `belowEditor` widget lines.
+Print and JSON modes do not display extension UI.
 The visual symbols use Nerd Font glyphs (``, ``) and the Powerline-thin
 separator (``). With FiraCode Nerd Font Mono, these glyphs are included in the
 terminal font; Powerline is not a separate font. If the session has no name, the

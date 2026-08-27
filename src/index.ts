@@ -1,3 +1,4 @@
+import { visibleWidth as terminalWidth } from "@earendil-works/pi-tui";
 import type { ExtensionAPI, ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-agent";
 
 const STATUS_KEY = "prime-status";
@@ -14,6 +15,7 @@ const SEGMENT_SEPARATOR = "  ";
 const ELLIPSIS = "…";
 const NO_WORKTREE = "(none)";
 const MAX_STATUS_VALUE_WIDTH = 160;
+const MAX_RAW_DISPLAY_LENGTH = 1024;
 const MIN_CARD_WIDTH = 40;
 const MAX_CARD_WIDTH = 120;
 const DEFAULT_CARD_WIDTH = 80;
@@ -32,7 +34,7 @@ function safeFg(theme: WidgetTheme, color: ThemeColor, text: string): string {
   try {
     return theme.fg(color, text);
   } catch {
-    // El daemon puede emitir eventos antes de que la TUI inicialice el tema.
+    // The daemon can emit events before the TUI initializes the theme.
     return text;
   }
 }
@@ -45,55 +47,88 @@ function safeBold(theme: WidgetTheme, text: string): string {
   }
 }
 
+type LimitedText = {
+  text: string;
+  wasLimited: boolean;
+};
+
+type PreparedText = {
+  segments: string[];
+  text: string;
+  wasLimited: boolean;
+};
+
+const graphemeSegmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
+/** Limit raw display input before width calculations and terminal rendering. */
+function limitRawText(value: string, fromEnd = false): LimitedText {
+  if (value.length <= MAX_RAW_DISPLAY_LENGTH) {
+    return { text: value, wasLimited: false };
+  }
+
+  let text = fromEnd
+    ? value.slice(-MAX_RAW_DISPLAY_LENGTH)
+    : value.slice(0, MAX_RAW_DISPLAY_LENGTH);
+
+  // Do not leave an unpaired UTF-16 surrogate at the truncation boundary.
+  if (fromEnd) {
+    const first = text.charCodeAt(0);
+    if (first >= 0xdc00 && first <= 0xdfff) text = text.slice(1);
+  } else {
+    const last = text.charCodeAt(text.length - 1);
+    if (last >= 0xd800 && last <= 0xdbff) text = text.slice(0, -1);
+  }
+
+  return { text, wasLimited: true };
+}
+
 /** Remove terminal control sequences before user/session data reaches the TUI. */
-function sanitizeDisplayText(value: string): string {
-  return value
+function sanitizeDisplayText(value: string, fromEnd = false): string {
+  const sanitized = value
     .replace(/\u001b\][\s\S]*?(?:\u0007|\u001b\\)/g, "")
     .replace(/\u009d[\s\S]*?(?:\u0007|\u009c)/g, "")
     .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, "")
     .replace(/\u009b[0-?]*[ -/]*[@-~]/g, "")
     .replace(/\u001b[ -/]*[@-~]/g, "")
-    .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+    // Keep ZWJ for valid emoji graphemes, but remove other format controls
+    // such as bidi overrides, zero-width spaces, and word joiners.
+    .replace(/\p{Cf}/gu, control => (control === "\u200d" ? control : ""))
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ");
+  return limitRawText(sanitized, fromEnd).text.replace(/\s+/g, " ").trim();
+}
+
+function graphemeSegments(value: string): string[] {
+  return Array.from(graphemeSegmenter.segment(value), part => part.segment);
+}
+
+function prepareText(value: string, fromEnd = false): PreparedText {
+  const limited = limitRawText(value, fromEnd);
+  const segments = graphemeSegments(limited.text).filter(segment => terminalWidth(segment) > 0);
+  const text = segments.join("");
+  return {
+    segments,
+    text,
+    wasLimited: limited.wasLimited || text.length !== limited.text.length,
+  };
 }
 
 function textWidth(value: string): number {
-  let width = 0;
-  for (const character of value) {
-    const codePoint = character.codePointAt(0) ?? 0;
-    if (
-      /\p{Mark}/u.test(character) ||
-      (codePoint >= 0xfe00 && codePoint <= 0xfe0f) ||
-      codePoint === 0x200d
-    ) {
-      continue;
-    }
-    const wide =
-      (codePoint >= 0x1100 && codePoint <= 0x115f) ||
-      (codePoint >= 0x2329 && codePoint <= 0x232a) ||
-      (codePoint >= 0x2e80 && codePoint <= 0xa4cf) ||
-      (codePoint >= 0xac00 && codePoint <= 0xd7a3) ||
-      (codePoint >= 0xf900 && codePoint <= 0xfaff) ||
-      (codePoint >= 0xff01 && codePoint <= 0xff60) ||
-      (codePoint >= 0xffe0 && codePoint <= 0xffe6) ||
-      (codePoint >= 0x1f300 && codePoint <= 0x1faff);
-    width += wide ? 2 : 1;
-  }
-  return width;
+  return terminalWidth(value);
 }
 
 function truncateText(value: string, maxWidth: number, fromEnd = false): string {
-  if (maxWidth <= 0) return "";
-  if (textWidth(value) <= maxWidth) return value;
-  if (maxWidth === 1) return ELLIPSIS;
+  if (maxWidth <= 0 || value.length === 0) return "";
 
-  const budget = maxWidth - textWidth(ELLIPSIS);
-  const characters = Array.from(value);
+  const prepared = prepareText(value, fromEnd);
+  const ellipsisWidth = textWidth(ELLIPSIS);
+  if (!prepared.wasLimited && textWidth(prepared.text) <= maxWidth) return prepared.text;
+  if (maxWidth <= ellipsisWidth) return ELLIPSIS;
+
+  const budget = maxWidth - ellipsisWidth;
   if (fromEnd) {
     let result = "";
-    for (let index = characters.length - 1; index >= 0; index -= 1) {
-      const next = characters[index] + result;
+    for (let index = prepared.segments.length - 1; index >= 0; index -= 1) {
+      const next = prepared.segments[index] + result;
       if (textWidth(next) > budget) break;
       result = next;
     }
@@ -101,9 +136,9 @@ function truncateText(value: string, maxWidth: number, fromEnd = false): string 
   }
 
   let result = "";
-  for (const character of characters) {
-    if (textWidth(result + character) > budget) break;
-    result += character;
+  for (const segment of prepared.segments) {
+    if (textWidth(result + segment) > budget) break;
+    result += segment;
   }
   return result + ELLIPSIS;
 }
@@ -122,7 +157,7 @@ async function detectWorktree(executor: Pick<ExtensionAPI, "exec">, cwd: string)
     });
     if (result.code !== 0) return NO_WORKTREE;
 
-    const root = sanitizeDisplayText(result.stdout).replace(/[\\/]+$/, "");
+    const root = sanitizeDisplayText(result.stdout, true).replace(/[\\/]+$/, "");
     const separator = Math.max(root.lastIndexOf("/"), root.lastIndexOf("\\"));
     return root.slice(separator + 1) || root || NO_WORKTREE;
   } catch {
@@ -130,32 +165,62 @@ async function detectWorktree(executor: Pick<ExtensionAPI, "exec">, cwd: string)
   }
 }
 
-const worktreeCache = new Map<string, string>();
-const worktreeRequests = new Map<string, Promise<string>>();
+type WorktreeCacheEntry = {
+  name: string;
+  expiresAt: number;
+};
 
-async function getWorktree(executor: Pick<ExtensionAPI, "exec">, cwd: string): Promise<string> {
-  const cached = worktreeCache.get(cwd);
-  if (cached !== undefined) return cached;
+const WORKTREE_CACHE_TTL_MS = 30_000;
 
-  const pending = worktreeRequests.get(cwd);
-  if (pending !== undefined) return pending;
+function createWorktreeResolver(executor: Pick<ExtensionAPI, "exec">): {
+  get(cwd: string): Promise<string>;
+  clear(cwd: string): void;
+} {
+  const cache = new Map<string, WorktreeCacheEntry>();
+  const requests = new Map<string, Promise<string>>();
+  const generations = new Map<string, number>();
 
-  const request = detectWorktree(executor, cwd)
-    .then(worktree => {
-      worktreeCache.set(cwd, worktree);
-      return worktree;
-    })
-    .finally(() => {
-      worktreeRequests.delete(cwd);
-    });
-  worktreeRequests.set(cwd, request);
-  return request;
+  const get = async (cwd: string): Promise<string> => {
+    const cached = cache.get(cwd);
+    if (cached !== undefined) {
+      if (cached.expiresAt > Date.now()) return cached.name;
+      cache.delete(cwd);
+    }
+
+    const pending = requests.get(cwd);
+    if (pending !== undefined) return pending;
+
+    const requestGeneration = generations.get(cwd) ?? 0;
+    let request: Promise<string>;
+    request = detectWorktree(executor, cwd)
+      .then(worktree => {
+        if (worktree !== NO_WORKTREE && (generations.get(cwd) ?? 0) === requestGeneration) {
+          cache.set(cwd, {
+            name: worktree,
+            expiresAt: Date.now() + WORKTREE_CACHE_TTL_MS,
+          });
+        }
+        return worktree;
+      })
+      .finally(() => {
+        if (requests.get(cwd) === request) requests.delete(cwd);
+      });
+    requests.set(cwd, request);
+    return request;
+  };
+
+  const clear = (cwd: string): void => {
+    cache.delete(cwd);
+    generations.set(cwd, (generations.get(cwd) ?? 0) + 1);
+    requests.delete(cwd);
+  };
+
+  return { get, clear };
 }
 
 function hasWidgetUI(ctx: ExtensionContext): boolean {
-  // `hasUI` is true for both local TUI contexts and daemon/RPC contexts. The latter
-  // accept only string-array widgets, so updateStatus publishes a static fallback
-  // before attempting the component factory.
+  // `hasUI` is true for both local TUI contexts and daemon/RPC contexts. Static
+  // widgets work in both; component factories are restricted to local TUI mode.
   return ctx.hasUI === true;
 }
 
@@ -248,15 +313,15 @@ function createCwdWidget(
       const bottom = border(`╰${"─".repeat(cardWidth - 2)}╯`);
       const topFill = Math.max(1, cardWidth - 8);
       const top = `${border("╭─ ")}${title}${border(` ${"─".repeat(topFill)}╮`)}`;
-      const worktreeBudget = Math.max(1, innerWidth - textWidth(worktreePrefix));
+      const worktreeBudget = Math.max(0, innerWidth - textWidth(worktreePrefix));
       const worktree = truncateText(worktreeName, worktreeBudget);
       const worktreeRaw = `${worktreePrefix}${worktree}`;
       const worktreeStyled = `${worktreeIcon} ${worktreeLabel} ${safeFg(theme, worktreeColor, worktree)}`;
       const worktreeRow = renderRow(worktreeRaw, worktreeStyled, innerWidth);
 
       if (available < 14) {
-        const pathBudget = Math.max(1, innerWidth - textWidth(pathPrefix));
-        const sessionBudget = Math.max(1, innerWidth - textWidth(sessionPrefix));
+        const pathBudget = Math.max(0, innerWidth - textWidth(pathPrefix));
+        const sessionBudget = Math.max(0, innerWidth - textWidth(sessionPrefix));
         const path = truncatePath(cwd, pathBudget);
         const session = truncateText(sessionName, sessionBudget);
         const pathRaw = `${pathPrefix}${path}`;
@@ -289,58 +354,41 @@ function createCwdWidget(
   };
 }
 
-function installCwdFooter(
+function setCwdWidget(
   ctx: ExtensionContext,
   cwd: string,
   sessionName: string,
   worktreeName: string,
   sessionColor: ThemeColor,
-): boolean {
-  if (typeof ctx.ui.setFooter !== "function") return false;
+): void {
+  const options = { placement: "belowEditor" as const };
+  const card = createCwdWidget(cwd, sessionName, worktreeName, sessionColor, contextTheme(ctx));
 
-  let installed = false;
+  // Keep a static version for RPC clients and older hosts that do not support
+  // component factories. The local TUI replaces it with the themed component.
+  ctx.ui.setWidget(STATUS_KEY, card.render(cardWidth()), options);
+  if (ctx.mode !== "tui") return;
+
   try {
-    // Local interactive hosts invoke the factory immediately. Daemon/RPC contexts
-    // expose setFooter as a no-op, so the callback is also our capability check.
-    ctx.ui.setFooter((_tui, theme) => {
-      installed = true;
-      return createCwdWidget(cwd, sessionName, worktreeName, sessionColor, theme);
-    });
+    ctx.ui.setWidget(
+      STATUS_KEY,
+      (_tui, theme) => createCwdWidget(cwd, sessionName, worktreeName, sessionColor, theme),
+      options,
+    );
   } catch {
-    installed = false;
+    // Older hosts may reject component factories; the static card remains visible.
   }
-  return installed;
 }
 
 function updateStatus(ctx: ExtensionContext, worktreeName = NO_WORKTREE): void {
   const namedSession = ctx.sessionManager.getSessionName();
-  const cwd = sanitizeDisplayText(ctx.cwd);
+  const cwd = sanitizeDisplayText(ctx.cwd, true);
   const sessionName = sanitizeDisplayText(namedSession ?? UNNAMED_SESSION);
   const sessionColor: ThemeColor = namedSession === undefined ? "warning" : SESSION_ICON_COLOR;
 
   if (hasWidgetUI(ctx)) {
-    const options = { placement: "belowEditor" as const };
-    const card = createCwdWidget(cwd, sessionName, worktreeName, sessionColor, contextTheme(ctx));
-
     ctx.ui.setStatus(STATUS_KEY, undefined);
-    if (installCwdFooter(ctx, cwd, sessionName, worktreeName, sessionColor)) {
-      // The footer is in the prompt dock, directly below the built-in agents line.
-      // Clear any fallback widget left by a previous daemon-backed render.
-      ctx.ui.setWidget(STATUS_KEY, undefined);
-    } else {
-      // Daemon/RPC hosts silently ignore component factories and custom footers.
-      // Keep a rendered fallback for those clients and older interactive hosts.
-      ctx.ui.setWidget(STATUS_KEY, card.render(cardWidth()), options);
-      try {
-        ctx.ui.setWidget(
-          STATUS_KEY,
-          (_tui, theme) => createCwdWidget(cwd, sessionName, worktreeName, sessionColor, theme),
-          options,
-        );
-      } catch {
-        // Older hosts may reject component factories; the static card remains visible.
-      }
-    }
+    setCwdWidget(ctx, cwd, sessionName, worktreeName, sessionColor);
     return;
   }
 
@@ -351,11 +399,12 @@ function updateStatus(ctx: ExtensionContext, worktreeName = NO_WORKTREE): void {
 }
 
 export default function primeStatus(pi: ExtensionAPI): void {
+  const worktreeResolver = createWorktreeResolver(pi);
   let refreshGeneration = 0;
   const refresh = async (_event: unknown, ctx: ExtensionContext): Promise<void> => {
     const generation = ++refreshGeneration;
     const worktreeName = hasWidgetUI(ctx)
-      ? await getWorktree(pi, ctx.cwd)
+      ? await worktreeResolver.get(ctx.cwd)
       : NO_WORKTREE;
     if (generation !== refreshGeneration) return;
     updateStatus(ctx, worktreeName);
@@ -368,10 +417,8 @@ export default function primeStatus(pi: ExtensionAPI): void {
   pi.on("turn_end", refresh);
   pi.on("session_shutdown", async (_event, ctx) => {
     refreshGeneration += 1;
+    worktreeResolver.clear(ctx.cwd);
     ctx.ui.setStatus(STATUS_KEY, undefined);
     ctx.ui.setWidget(STATUS_KEY, undefined);
-    if (typeof ctx.ui.setFooter === "function") {
-      ctx.ui.setFooter(undefined);
-    }
   });
 }

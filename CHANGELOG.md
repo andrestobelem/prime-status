@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.4 - 2026-08-27
+
+### Changed
+
+- Render the card as a `belowEditor` widget without replacing the built-in footer.
+- Align the package Node.js requirement with the supported Prime Agent runtime.
+
+### Fixed
+
+- Use `pi-tui` terminal-width calculations for grapheme-safe truncation.
+- Bound raw display input and remove Unicode format controls that can spoof text.
+- Retry failed Git detection and clear cached worktree names when a session ends.
+
 ## 0.1.3 - 2026-08-24
 
 ### Changed
